@@ -28,12 +28,12 @@ export type Dict = {
 export const dictionary: Dict = {
   CN: {
     provinces: {
-      xx: "Xiangxiang Province",
+      bj: "Beijing",
       yy: "Yunnan Province",
       // ...add more provinces
     },
     cities: {
-      xx: {
+      bj: {
         aaaa: "Alpha City",
         bbbb: "Beta City",
         // ...more cities

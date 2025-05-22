@@ -40,7 +40,7 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 border rounded"
+        className={`w-full p-2 border rounded ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
         disabled={disabled}
       >
         <option value="" disabled hidden>

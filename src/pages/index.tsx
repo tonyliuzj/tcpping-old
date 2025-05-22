@@ -1,13 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ProtocolSelect, Protocol } from "../components/ProtocolSelect";
 import CountrySelect from "../components/CountrySelect";
 import ProvinceSelect from "../components/ProvinceSelect";
 import CitySelect from "../components/CitySelect";
 import ProviderSelect from "../components/ProviderSelect";
-import { dictionary } from "../data/dictionary";
-
-// You may need to change this to match your ProtocolSelect's "dual stack" value:
-const DEFAULT_PROTOCOL: Protocol = "dual"; // use actual value for dual stack
+import { IPInfo } from "../components/IPInfo";
+import { DNSInfo } from "../components/DNSInfo";
 
 const defaultState = {
   protocol: "",
@@ -17,16 +15,110 @@ const defaultState = {
   provider: "",
 };
 
+// --- Utilities
+function cleanHostname(input: string): string {
+  let value = input.trim();
+  value = value.replace(/^https?:\/\//i, "");
+  value = value.split("/")[0];
+  value = value.replace(/:.*$/, ""); // Strip port
+  return value;
+}
+function isIPv4(ip: string) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip.trim());
+}
+function isIPv6(ip: string) {
+  return /^([a-fA-F0-9:]+:+)+[a-fA-F0-9]+$/.test(ip.trim());
+}
+function isHostname(str: string) {
+  return (
+    /^(([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63})$/.test(str) ||
+    /^([a-zA-Z0-9-]{1,63})$/.test(str)
+  );
+}
+
+// --- Cloudflare DNS-over-HTTPS A/AAAA record check ---
+async function checkDomainValid(domain: string) {
+  try {
+    const checkType = async (type: "A" | "AAAA") => {
+      const res = await fetch(
+        `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${type}`,
+        { headers: { accept: "application/dns-json" } }
+      );
+      const data = await res.json();
+      return Array.isArray(data.Answer) && data.Answer.length > 0;
+    };
+    const hasA = await checkType("A");
+    const hasAAAA = await checkType("AAAA");
+    return hasA || hasAAAA;
+  } catch {
+    return false;
+  }
+}
+
 export default function Home() {
-  const [protocol, setProtocol] = useState<Protocol>(defaultState.protocol);
+  const [protocol, setProtocol] = useState<string>(defaultState.protocol);
   const [country, setCountry] = useState<string>(defaultState.country);
   const [province, setProvince] = useState<string>(defaultState.province);
   const [city, setCity] = useState<string>(defaultState.city);
   const [provider, setProvider] = useState<string>(defaultState.provider);
   const [copied, setCopied] = useState<boolean>(false);
-  const [generatedUrl, setGeneratedUrl] = useState<string>("");
+  const [inputValue, setInputValue] = useState<string>("");
+  const [lookupType, setLookupType] = useState<"empty" | "ipv4" | "ipv6" | "hostname" | "invalid">("empty");
+  const [fetching, setFetching] = useState(false);
+  const [ipInfoResults, setIpInfoResults] = useState<any[] | null>(null);
+  const [dnsInfoResults, setDnsInfoResults] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Reset function for all fields
+  // New: Track status of generated domain (A/AAAA records)
+  const [domainStatus, setDomainStatus] = useState<"unknown" | "valid" | "invalid">("unknown");
+  const [domainChecking, setDomainChecking] = useState(false);
+
+  // Recognize the type of input on every input change, but DO NOT fetch
+  useEffect(() => {
+    setIpInfoResults(null);
+    setDnsInfoResults(null);
+    setError(null);
+    setFetching(false);
+
+    const val = cleanHostname(inputValue);
+    if (!val) return setLookupType("empty");
+    if (isIPv4(val)) return setLookupType("ipv4");
+    if (isIPv6(val)) return setLookupType("ipv6");
+    if (isHostname(val)) return setLookupType("hostname");
+    return setLookupType("invalid");
+  }, [inputValue]);
+
+  // Generator logic (now async, and fixed for CN!)
+  const handleGenerate = async () => {
+    let url = "";
+    const protocolPrefix = protocol && protocol !== "dual" ? `${protocol}.` : "";
+
+    if (country === "CN") {
+      if (province && city && provider) {
+        url = `${protocolPrefix}${province}-${city}-${provider}.cn.tcpping.top`;
+      } else if (province && provider) {
+        url = `${protocolPrefix}${province}-${provider}.cn.tcpping.top`;
+      } else if (provider) {
+        url = `${protocolPrefix}${provider}.cn.tcpping.top`;
+      }
+    } else if (provider && country) {
+      if (city) {
+        url = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
+      } else {
+        url = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
+      }
+    }
+    setInputValue(url);
+    setDomainStatus("unknown");
+    if (url) {
+      setDomainChecking(true);
+      const valid = await checkDomainValid(url);
+      setDomainStatus(valid ? "valid" : "invalid");
+      setDomainChecking(false);
+    }
+  };
+
+
   const handleReset = () => {
     setProtocol(defaultState.protocol);
     setCountry(defaultState.country);
@@ -34,137 +126,197 @@ export default function Home() {
     setCity(defaultState.city);
     setProvider(defaultState.provider);
     setCopied(false);
-    setGeneratedUrl("");
+    setDomainStatus("unknown");
+    setDomainChecking(false);
   };
 
-  // Handle cascading resets
+  // Generator select handlers (don't clear inputValue)
   const handleCountryChange = (val: string) => {
     setCountry(val);
     setProvince("");
     setCity("");
     setProvider("");
     setCopied(false);
-    setGeneratedUrl("");
   };
   const handleProvinceChange = (val: string) => {
     setProvince(val);
     setCity("");
     setProvider("");
     setCopied(false);
-    setGeneratedUrl("");
   };
   const handleCityChange = (val: string) => {
     setCity(val);
     setProvider("");
     setCopied(false);
-    setGeneratedUrl("");
   };
   const handleProviderChange = (val: string) => {
     setProvider(val);
     setCopied(false);
-    setGeneratedUrl("");
   };
   const handleProtocolChange = (val: Protocol) => {
     setProtocol(val);
     setCopied(false);
-    setGeneratedUrl("");
   };
 
-  // Generate URL when button is clicked
-  const handleGenerate = () => {
-    let url = "";
-    if (provider && country) {
-      const protocolPrefix = protocol && protocol !== "dual" ? `${protocol}.` : "";
-      // CN: province/city logic
-      if (country === "CN") {
-        if (city) {
-          url = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
-        } else {
-          url = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
-        }
-      } else if (city) {
-        url = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
-      } else {
-        url = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
-      }
-    }
-    setGeneratedUrl(url);
-  };
-
-  // Copy URL
   const handleCopy = () => {
-    if (generatedUrl) {
-      navigator.clipboard.writeText(generatedUrl);
+    if (inputValue) {
+      navigator.clipboard.writeText(inputValue);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }
   };
 
-  // For non-CN countries: no province, show city list directly
+  // --- Lookup handler ---
+  const handleFetchInfo = async () => {
+    setFetching(true);
+    setIpInfoResults(null);
+    setDnsInfoResults(null);
+    setError(null);
+    const val = cleanHostname(inputValue);
+
+    try {
+      if (lookupType === "ipv4" || lookupType === "ipv6") {
+        const res = await fetch(`/api/info?ip=${encodeURIComponent(val)}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "Failed to fetch IP info");
+        setIpInfoResults(data.results || []);
+      } else if (lookupType === "hostname") {
+        setDnsInfoResults(val); // Let DNSInfo handle the fetch/render
+      }
+    } catch (e: any) {
+      setError(e.message || "Error fetching info");
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const showProvince = country === "CN";
   const countrySelected = !!country;
+  const provinceSelected = !!province;
+  const citySelected = !!city;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-center">TCPing Host Generator</h1>
-        <div className="space-y-4">
-          <ProtocolSelect value={protocol} onChange={handleProtocolChange} />
-          <CountrySelect value={country} onChange={handleCountryChange} />
+      <div className="w-full max-w-full md:max-w-6xl bg-white shadow-lg rounded-2xl p-8 space-y-4">
+        <h1 className="text-2xl font-bold text-center mb-4">TCPing Host Generator & Lookup</h1>
+        {/* Generator controls */}
+        <div className="flex flex-col md:flex-row items-stretch gap-2 w-full">
+          <div className="flex-1 min-w-[140px]">
+            <ProtocolSelect value={protocol} onChange={handleProtocolChange} />
+          </div>
+          <div className="flex-1 min-w-[140px]">
+            <CountrySelect value={country} onChange={handleCountryChange} />
+          </div>
           {showProvince && (
-            <ProvinceSelect
-              country={country}
-              value={province}
-              onChange={handleProvinceChange}
-              disabled={!countrySelected}
-            />
+            <div className="flex-1 min-w-[140px]">
+              <ProvinceSelect
+                country={country}
+                value={province}
+                onChange={handleProvinceChange}
+                disabled={!countrySelected}
+              />
+            </div>
           )}
-          <CitySelect
-            country={country}
-            province={showProvince ? province : undefined}
-            value={city}
-            onChange={handleCityChange}
-            disabled={!countrySelected || (showProvince && !province)}
-          />
-          <ProviderSelect
-            country={country}
-            province={showProvince ? province : undefined}
-            city={city}
-            value={provider}
-            onChange={handleProviderChange}
-            disabled={
-              !countrySelected ||
-              (showProvince && !province) ||
-              (country !== "CN" && !city)
-            }
-          />
-        </div>
-        <div className="flex justify-between space-x-2">
+          <div className="flex-1 min-w-[140px]">
+            <CitySelect
+              country={country}
+              province={showProvince ? province : undefined}
+              value={city}
+              onChange={handleCityChange}
+              disabled={
+                !countrySelected ||
+                (showProvince && !provinceSelected)
+              }
+            />
+          </div>
+          <div className="flex-1 min-w-[140px]">
+            <ProviderSelect
+              country={country}
+              province={showProvince ? province : undefined}
+              city={city}
+              value={provider}
+              onChange={handleProviderChange}
+              disabled={
+                !countrySelected ||
+                (showProvince && !provinceSelected) ||
+                (country !== "CN" && !citySelected)
+              }
+            />
+          </div>
           <button
-            className="flex-1 py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition h-fit mt-auto"
+            style={{ minWidth: 90 }}
             onClick={handleGenerate}
             disabled={!provider || !country}
           >
             Generate
           </button>
           <button
-            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+            className="py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition h-fit mt-auto"
+            style={{ minWidth: 90 }}
             onClick={handleReset}
           >
             Reset
           </button>
         </div>
-        <div className="mt-4 text-center">
-          {generatedUrl && (
-            <div className="flex items-center justify-between bg-gray-50 border rounded px-3 py-2">
-              <span className="truncate">{generatedUrl}</span>
-              <button
-                onClick={handleCopy}
-                className="ml-3 text-blue-600 hover:underline"
-              >
-                {copied ? "Copied!" : "Copy"}
-              </button>
+        {/* Shared input box for both generator and lookup */}
+        <div className="mt-4 flex justify-center w-full">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={e => {
+              setInputValue(e.target.value);
+              setDomainStatus("unknown");
+            }}
+            className="flex-1 max-w-3xl border rounded px-3 py-2 bg-gray-50 text-gray-700 truncate"
+            placeholder="Generated URL or enter IP address / hostname"
+            autoComplete="off"
+            disabled={fetching}
+          />
+          <button
+            onClick={handleCopy}
+            className="ml-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            disabled={!inputValue}
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+          <button
+            onClick={handleFetchInfo}
+            className="ml-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            disabled={
+              lookupType === "empty" ||
+              lookupType === "invalid" ||
+              fetching
+            }
+          >
+            {fetching ? "Fetching..." : "Fetch Info"}
+          </button>
+        </div>
+        {/* Domain validity under input */}
+        <div className="mt-2 h-6 flex items-center">
+          {domainChecking && (
+            <span className="text-blue-500 font-semibold">Checking domain validity...</span>
+          )}
+          {domainStatus === "valid" && !domainChecking && (
+            <span className="text-green-600 font-semibold">✔ Valid domain</span>
+          )}
+          {domainStatus === "invalid" && !domainChecking && (
+            <span className="text-red-600 font-semibold">✖ Invalid domain (no A/AAAA records)</span>
+          )}
+        </div>
+        {/* Lookup results */}
+        <div className="mt-8 w-full">
+          {error && <div className="text-red-600 text-center">{error}</div>}
+          {lookupType === "invalid" &&
+            <div className="text-red-600 text-center mt-4">
+              Invalid input: please enter a valid hostname, IPv4, or IPv6 address.
             </div>
+          }
+          {(lookupType === "ipv4" || lookupType === "ipv6") && ipInfoResults && (
+            <IPInfo ip={cleanHostname(inputValue)} results={ipInfoResults} />
+          )}
+          {lookupType === "hostname" && dnsInfoResults && (
+            <DNSInfo input={cleanHostname(inputValue)} />
           )}
         </div>
       </div>

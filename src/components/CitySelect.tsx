@@ -36,11 +36,12 @@ const CitySelect: React.FC<CitySelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 border rounded"
+        className={`w-full p-2 border rounded ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
         disabled={disabled}
       >
+        {/* Always allow (No city) as an option for China */}
         {country === "CN" ? (
-          <option value="" disabled hidden>
+          <option value="">
             (No city)
           </option>
         ) : (
