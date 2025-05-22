@@ -18,9 +18,9 @@ const defaultState = {
 // --- Utilities
 function cleanHostname(input: string): string {
   let value = input.trim();
-  value = value.replace(/^https?:\/\//i, "");
-  value = value.split("/")[0];
-  value = value.replace(/:.*$/, ""); // Strip port
+  value = value.replace(/^https?:\/\//i, ""); // Remove http:// or https://
+  value = value.replace(/\/.*$/, "");         // Remove any path
+  value = value.replace(/:.*$/, "");          // Remove any port
   return value;
 }
 function isIPv4(ip: string) {
@@ -73,6 +73,20 @@ export default function Home() {
   const [domainStatus, setDomainStatus] = useState<"unknown" | "valid" | "invalid">("unknown");
   const [domainChecking, setDomainChecking] = useState(false);
 
+  // --- AUTO-REMOVE http/https AND PATH FROM INPUT ---
+  useEffect(() => {
+    // Remove protocol, port, and path as user types/pastes
+    const cleaned = inputValue
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/.*$/, "")
+      .replace(/:.*$/, "");
+    if (inputValue !== cleaned) {
+      setInputValue(cleaned);
+    }
+    // eslint-disable-next-line
+  }, [inputValue]);
+  // -----------------
+
   // Recognize the type of input on every input change, but DO NOT fetch
   useEffect(() => {
     setIpInfoResults(null);
@@ -117,7 +131,6 @@ export default function Home() {
       setDomainChecking(false);
     }
   };
-
 
   const handleReset = () => {
     setProtocol(defaultState.protocol);
@@ -247,7 +260,7 @@ export default function Home() {
             className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition h-fit mt-auto"
             style={{ minWidth: 90 }}
             onClick={handleGenerate}
-            disabled={!provider || !country}
+            disabled={!provider || !country || !protocol}
           >
             Generate
           </button>
@@ -313,7 +326,7 @@ export default function Home() {
             </div>
           }
           {(lookupType === "ipv4" || lookupType === "ipv6") && ipInfoResults && (
-            <IPInfo ip={cleanHostname(inputValue)} results={ipInfoResults} />
+            <IPInfo ip={cleanHostname(inputValue)} />
           )}
           {lookupType === "hostname" && dnsInfoResults && (
             <DNSInfo input={cleanHostname(inputValue)} />
