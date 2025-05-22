@@ -1,5 +1,3 @@
-// src/components/ProtocolSelect.tsx
-
 import React from "react";
 export type Protocol = "" | "v4" | "v6";
 
@@ -13,7 +11,7 @@ export const ProtocolSelect: React.FC<ProtocolSelectProps> = ({
   onChange,
 }) => (
   <select
-    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring"
+    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
     value={protocol}
     onChange={e => onChange(e.target.value as Protocol)}
     required

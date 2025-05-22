@@ -1,5 +1,3 @@
-// src/components/CitySelect.tsx
-
 import React from "react";
 import { dictionary } from "../data/dictionary";
 
@@ -8,6 +6,7 @@ interface CitySelectProps {
   province?: string;
   city?: string;
   onChange: (city: string) => void;
+  isChinaOptional?: boolean;
 }
 
 const CitySelect: React.FC<CitySelectProps> = ({
@@ -15,32 +14,42 @@ const CitySelect: React.FC<CitySelectProps> = ({
   province,
   city,
   onChange,
+  isChinaOptional = false,
 }) => {
-  // China logic: show cities under selected province, optional select
   if (country === "CN") {
     if (!province) return null;
     const cities = dictionary.CN.cities[province] || {};
     return (
-      <select value={city || ""} onChange={(e) => onChange(e.target.value)}>
-        <option value="">(Optional) Select City</option>
-        {Object.entries(cities).map(([code, name]) => (
-          <option key={code} value={code}>
-            {name}
+      <select
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+        value={city || ""}
+        onChange={e => onChange(e.target.value)}
+      >
+        <option value="">
+          {isChinaOptional ? "No City (entire province)" : "Select City"}
+        </option>
+        {Object.entries(cities).map(([key, value]) => (
+          <option key={key} value={key}>
+            {typeof value === "string" ? value : value.name}
           </option>
         ))}
       </select>
     );
   }
-
-  // Other country logic: cities are flat, city is required
-  const cities = (dictionary[country] as any)?.cities || {};
+  // For other countries, city is required
+  const cities = dictionary[country]?.cities || {};
   return (
-    <select value={city || ""} onChange={(e) => onChange(e.target.value)} required>
+    <select
+      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+      value={city || ""}
+      onChange={e => onChange(e.target.value)}
+      required
+    >
       <option value="" disabled>
         Select City
       </option>
-      {Object.entries(cities).map(([code, value]) => (
-        <option key={code} value={code}>
+      {Object.entries(cities).map(([key, value]) => (
+        <option key={key} value={key}>
           {typeof value === "string" ? value : value.name}
         </option>
       ))}

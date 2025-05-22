@@ -1,5 +1,3 @@
-// src/components/ProviderSelect.tsx
-
 import React from "react";
 import { dictionary } from "../data/dictionary";
 
@@ -17,7 +15,7 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
   provider,
   onChange,
 }) => {
-  let providers: Record<string, string> = {};
+  let providers: Record<string, any> = {};
 
   if (country === "CN") {
     providers = dictionary.CN.providers;
@@ -27,13 +25,18 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
   }
 
   return (
-    <select value={provider || ""} onChange={(e) => onChange(e.target.value)} required>
+    <select
+      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+      value={provider || ""}
+      onChange={e => onChange(e.target.value)}
+      required
+    >
       <option value="" disabled>
         Select Provider
       </option>
-      {Object.entries(providers).map(([code, name]) => (
-        <option key={code} value={code}>
-          {name}
+      {Object.entries(providers).map(([key, value]) => (
+        <option key={key} value={key}>
+          {typeof value === "string" ? value : value.name}
         </option>
       ))}
     </select>
