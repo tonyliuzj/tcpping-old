@@ -1,19 +1,17 @@
 import React, { useState } from "react";
 import { ProtocolSelect, Protocol } from "../components/ProtocolSelect";
-import CitySelect from "../components/CitySelect";
+import CountrySelect from "../components/CountrySelect";
 import ProvinceSelect from "../components/ProvinceSelect";
+import CitySelect from "../components/CitySelect";
 import ProviderSelect from "../components/ProviderSelect";
+import { dictionary } from "../data/dictionary";
 
-const countries = [
-  { code: "CN", name: "China" },
-  { code: "US", name: "United States" },
-  { code: "DE", name: "Germany" },
-  // ...add more as needed
-];
+// You may need to change this to match your ProtocolSelect's "dual stack" value:
+const DEFAULT_PROTOCOL: Protocol = "dual"; // use actual value for dual stack
 
 const defaultState = {
-  protocol: "" as Protocol,
-  country: "CN",
+  protocol: "",
+  country: "",
   province: "",
   city: "",
   provider: "",
@@ -26,6 +24,7 @@ export default function Home() {
   const [city, setCity] = useState<string>(defaultState.city);
   const [provider, setProvider] = useState<string>(defaultState.provider);
   const [copied, setCopied] = useState<boolean>(false);
+  const [generatedUrl, setGeneratedUrl] = useState<string>("");
 
   // Reset function for all fields
   const handleReset = () => {
@@ -35,6 +34,7 @@ export default function Home() {
     setCity(defaultState.city);
     setProvider(defaultState.provider);
     setCopied(false);
+    setGeneratedUrl("");
   };
 
   // Handle cascading resets
@@ -44,148 +44,130 @@ export default function Home() {
     setCity("");
     setProvider("");
     setCopied(false);
+    setGeneratedUrl("");
   };
   const handleProvinceChange = (val: string) => {
     setProvince(val);
     setCity("");
     setProvider("");
     setCopied(false);
+    setGeneratedUrl("");
   };
   const handleCityChange = (val: string) => {
     setCity(val);
     setProvider("");
     setCopied(false);
+    setGeneratedUrl("");
   };
   const handleProviderChange = (val: string) => {
     setProvider(val);
     setCopied(false);
+    setGeneratedUrl("");
   };
   const handleProtocolChange = (val: Protocol) => {
     setProtocol(val);
     setCopied(false);
+    setGeneratedUrl("");
   };
 
-  // URL generation logic (China: city is optional)
-  let generatedUrl = "";
-  if (provider && country) {
-    const protocolPrefix = protocol ? `${protocol}.` : ""; // only add dot if protocol exists
-    if (country === "CN") {
-      if (city) {
-        generatedUrl = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
+  // Generate URL when button is clicked
+  const handleGenerate = () => {
+    let url = "";
+    if (provider && country) {
+      const protocolPrefix = protocol && protocol !== "dual" ? `${protocol}.` : "";
+      // CN: province/city logic
+      if (country === "CN") {
+        if (city) {
+          url = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
+        } else {
+          url = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
+        }
+      } else if (city) {
+        url = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
       } else {
-        generatedUrl = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
+        url = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
       }
-    } else if (city) {
-      generatedUrl = `${protocolPrefix}${provider}-${city}.${country.toLowerCase()}.tcpping.top`;
-    } else {
-      generatedUrl = `${protocolPrefix}${provider}.${country.toLowerCase()}.tcpping.top`;
     }
-  }
+    setGeneratedUrl(url);
+  };
 
-
-  // Copy to clipboard function
-  const copyToClipboard = async () => {
+  // Copy URL
+  const handleCopy = () => {
     if (generatedUrl) {
-      await navigator.clipboard.writeText(generatedUrl);
+      navigator.clipboard.writeText(generatedUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
+      setTimeout(() => setCopied(false), 1500);
     }
   };
+
+  // For non-CN countries: no province, show city list directly
+  const showProvince = country === "CN";
+  const countrySelected = !!country;
 
   return (
-    <main className="min-h-screen bg-gradient-to-tr from-gray-50 via-white to-gray-100 flex flex-col items-center justify-center py-10 px-4">
-      <div className="w-full max-w-md bg-white/80 shadow-xl rounded-2xl p-8 border border-gray-100 backdrop-blur-md">
-        <h1 className="text-3xl font-extrabold mb-8 text-center tracking-tight text-gray-900">
-          TCP Ping Generator
-        </h1>
-        <form className="space-y-6">
-          {/* Protocol selector */}
-          <div>
-            <label className="block mb-1 text-gray-700 font-semibold">Protocol</label>
-            <ProtocolSelect protocol={protocol} onChange={handleProtocolChange} />
-          </div>
-          {/* Country Selector */}
-          <div>
-            <label className="block mb-1 text-gray-700 font-semibold">Country</label>
-            <select
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-              value={country}
-              onChange={e => handleCountryChange(e.target.value)}
-              required
-            >
-              <option value="" disabled>
-                Select Country
-              </option>
-              {countries.map(({ code, name }) => (
-                <option key={code} value={code}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Province Selector (China only) */}
-          {country === "CN" && (
-            <div>
-              <label className="block mb-1 text-gray-700 font-semibold">Province</label>
-              <ProvinceSelect
-                country={country}
-                province={province}
-                onChange={handleProvinceChange}
-              />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8 space-y-6">
+        <h1 className="text-2xl font-bold text-center">TCPing Host Generator</h1>
+        <div className="space-y-4">
+          <ProtocolSelect value={protocol} onChange={handleProtocolChange} />
+          <CountrySelect value={country} onChange={handleCountryChange} />
+          {showProvince && (
+            <ProvinceSelect
+              country={country}
+              value={province}
+              onChange={handleProvinceChange}
+              disabled={!countrySelected}
+            />
+          )}
+          <CitySelect
+            country={country}
+            province={showProvince ? province : undefined}
+            value={city}
+            onChange={handleCityChange}
+            disabled={!countrySelected || (showProvince && !province)}
+          />
+          <ProviderSelect
+            country={country}
+            province={showProvince ? province : undefined}
+            city={city}
+            value={provider}
+            onChange={handleProviderChange}
+            disabled={
+              !countrySelected ||
+              (showProvince && !province) ||
+              (country !== "CN" && !city)
+            }
+          />
+        </div>
+        <div className="flex justify-between space-x-2">
+          <button
+            className="flex-1 py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            onClick={handleGenerate}
+            disabled={!provider || !country}
+          >
+            Generate
+          </button>
+          <button
+            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+            onClick={handleReset}
+          >
+            Reset
+          </button>
+        </div>
+        <div className="mt-4 text-center">
+          {generatedUrl && (
+            <div className="flex items-center justify-between bg-gray-50 border rounded px-3 py-2">
+              <span className="truncate">{generatedUrl}</span>
+              <button
+                onClick={handleCopy}
+                className="ml-3 text-blue-600 hover:underline"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
             </div>
           )}
-          {/* City Selector (China: optional) */}
-          <div>
-            <label className="block mb-1 text-gray-700 font-semibold">
-              City {country !== "CN" && <span className="text-red-500">*</span>}
-            </label>
-            <CitySelect
-              country={country}
-              province={country === "CN" ? province : undefined}
-              city={city}
-              onChange={handleCityChange}
-              isChinaOptional={country === "CN"} // pass prop for new logic
-            />
-          </div>
-          {/* Provider Selector */}
-          <div>
-            <label className="block mb-1 text-gray-700 font-semibold">Provider</label>
-            <ProviderSelect
-              country={country}
-              province={country === "CN" ? province : undefined}
-              city={city}
-              provider={provider}
-              onChange={handleProviderChange}
-            />
-          </div>
-          {/* Buttons */}
-          <div className="flex gap-3 pt-3 justify-end">
-            <button
-              type="button"
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium transition"
-              onClick={handleReset}
-            >
-              Reset
-            </button>
-          </div>
-        </form>
-        {/* Generated URL and Copy Button */}
-        {generatedUrl && (
-          <div className="mt-8 flex flex-col items-center">
-            <div className="p-4 rounded-lg bg-blue-50/80 text-blue-800 font-mono text-center text-sm break-all shadow">
-              {generatedUrl}
-            </div>
-            <button
-              type="button"
-              className={`mt-4 px-5 py-2 rounded-lg font-semibold transition shadow bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:outline-none ${copied ? "bg-green-600" : ""
-                }`}
-              onClick={copyToClipboard}
-            >
-              {copied ? "Copied!" : "Copy URL"}
-            </button>
-          </div>
-        )}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

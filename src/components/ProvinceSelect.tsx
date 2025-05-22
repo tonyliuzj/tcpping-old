@@ -3,35 +3,38 @@ import { dictionary } from "../data/dictionary";
 
 interface ProvinceSelectProps {
   country: string;
-  province?: string;
-  onChange: (province: string) => void;
+  value: string;
+  onChange: (val: string) => void;
+  disabled?: boolean;
 }
 
 const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
   country,
-  province,
+  value,
   onChange,
+  disabled,
 }) => {
   if (country !== "CN") return null;
-
   const provinces = dictionary.CN.provinces;
-
   return (
-    <select
-      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-      value={province || ""}
-      onChange={e => onChange(e.target.value)}
-      required
-    >
-      <option value="" disabled>
-        Select Province
-      </option>
-      {Object.entries(provinces).map(([key, name]) => (
-        <option key={key} value={key}>
-          {name}
+    <div>
+      <label className="block mb-1 font-medium">Province</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full p-2 border rounded"
+        disabled={disabled}
+      >
+        <option value="" disabled hidden>
+          Select province
         </option>
-      ))}
-    </select>
+        {Object.entries(provinces).map(([code, name]) => (
+          <option key={code} value={code}>
+            {name}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };
 
