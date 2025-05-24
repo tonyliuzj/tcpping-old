@@ -1,5 +1,4 @@
-import React from "react";
-import { dictionary } from "../data/dictionary";
+import React, { useEffect, useState } from "react";
 
 interface CitySelectProps {
   country: string;
@@ -9,6 +8,11 @@ interface CitySelectProps {
   disabled?: boolean;
 }
 
+// For TS typing, you can extend this as needed (or use `any` if in a hurry)
+interface DictionaryType {
+  [country: string]: any;
+}
+
 const CitySelect: React.FC<CitySelectProps> = ({
   country,
   province,
@@ -16,18 +20,34 @@ const CitySelect: React.FC<CitySelectProps> = ({
   onChange,
   disabled,
 }) => {
+  const [dictionary, setDictionary] = useState<DictionaryType | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDictionary = async () => {
+      setLoading(true);
+      const res = await fetch("/api/dictionary");
+      const data = await res.json();
+      setDictionary(data);
+      setLoading(false);
+    };
+    fetchDictionary();
+  }, []);
+
   let cities: [string, string][] = [];
 
-  if (country === "CN") {
-    if (province && dictionary.CN.cities[province]) {
-      cities = Object.entries(dictionary.CN.cities[province]);
+  if (!loading && dictionary) {
+    if (country === "CN") {
+      if (province && dictionary.CN.cities[province]) {
+        cities = Object.entries(dictionary.CN.cities[province]);
+      }
+    } else if (country && dictionary[country] && "cities" in dictionary[country]) {
+      const cityDict = dictionary[country].cities;
+      cities = Object.entries(cityDict).map(([code, obj]: [string, any]) => [
+        code,
+        obj.name,
+      ]);
     }
-  } else if (country && dictionary[country] && "cities" in dictionary[country]) {
-    const cityDict = (dictionary[country] as any).cities;
-    cities = Object.entries(cityDict).map(([code, obj]: [string, any]) => [
-      code,
-      obj.name,
-    ]);
   }
 
   return (
@@ -36,24 +56,32 @@ const CitySelect: React.FC<CitySelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full p-2 border rounded ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
-        disabled={disabled}
+        className={`w-full p-2 border rounded ${
+          disabled || loading ? "bg-gray-100 cursor-not-allowed" : ""
+        }`}
+        disabled={disabled || loading}
       >
-        {/* Always allow (No city) as an option for China */}
-        {country === "CN" ? (
-          <option value="">
-            (No city)
-          </option>
+        {loading ? (
+          <option>Loading...</option>
         ) : (
-          <option value="" disabled hidden>
-            Select city
-          </option>
+          <>
+            {/* Always allow (No city) as an option for China */}
+            {country === "CN" ? (
+              <option value="">
+                (No city)
+              </option>
+            ) : (
+              <option value="" disabled hidden>
+                Select city
+              </option>
+            )}
+            {cities.map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </>
         )}
-        {cities.map(([code, name]) => (
-          <option key={code} value={code}>
-            {name}
-          </option>
-        ))}
       </select>
     </div>
   );

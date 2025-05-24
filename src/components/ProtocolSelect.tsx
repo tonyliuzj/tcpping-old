@@ -11,15 +11,21 @@ const protocolOptions: { value: Protocol; label: string }[] = [
 interface ProtocolSelectProps {
   value: string;
   onChange: (val: Protocol) => void;
+  disabled?: boolean;
 }
 
-const ProtocolSelect: React.FC<ProtocolSelectProps> = ({ value, onChange }) => (
+const ProtocolSelect: React.FC<ProtocolSelectProps> = ({
+  value,
+  onChange,
+  disabled = false,
+}) => (
   <div>
     <label className="block mb-1 font-medium">Protocol</label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as Protocol)}
-      className="w-full p-2 border rounded"
+      className={`w-full p-2 border rounded ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+      disabled={disabled}
     >
       <option value="" disabled hidden>
         Select protocol

@@ -1,5 +1,4 @@
-import React from "react";
-import { dictionary } from "../data/dictionary";
+import React, { useEffect, useState } from "react";
 
 interface ProvinceSelectProps {
   country: string;
@@ -14,19 +13,34 @@ const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
   onChange,
   disabled,
 }) => {
+  const [provinces, setProvinces] = useState<{ [code: string]: string }>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (country !== "CN") return;
+    const fetchDictionary = async () => {
+      setLoading(true);
+      const res = await fetch("/api/dictionary");
+      const data = await res.json();
+      setProvinces(data.CN.provinces);
+      setLoading(false);
+    };
+    fetchDictionary();
+  }, [country]);
+
   if (country !== "CN") return null;
-  const provinces = dictionary.CN.provinces;
+
   return (
     <div>
       <label className="block mb-1 font-medium">Province</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full p-2 border rounded ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
-        disabled={disabled}
+        className={`w-full p-2 border rounded ${disabled || loading ? "bg-gray-100 cursor-not-allowed" : ""}`}
+        disabled={disabled || loading}
       >
         <option value="" disabled hidden>
-          Select province
+          {loading ? "Loading..." : "Select province"}
         </option>
         {Object.entries(provinces).map(([code, name]) => (
           <option key={code} value={code}>

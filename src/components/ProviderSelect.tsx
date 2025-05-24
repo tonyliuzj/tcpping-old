@@ -1,5 +1,4 @@
-import React from "react";
-import { dictionary } from "../data/dictionary";
+import React, { useEffect, useState } from "react";
 
 interface ProviderSelectProps {
   country: string;
@@ -10,6 +9,10 @@ interface ProviderSelectProps {
   disabled?: boolean;
 }
 
+interface DictionaryType {
+  [country: string]: any;
+}
+
 const ProviderSelect: React.FC<ProviderSelectProps> = ({
   country,
   province,
@@ -18,20 +21,36 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
   onChange,
   disabled,
 }) => {
+  const [dictionary, setDictionary] = useState<DictionaryType | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDictionary = async () => {
+      setLoading(true);
+      const res = await fetch("/api/dictionary");
+      const data = await res.json();
+      setDictionary(data);
+      setLoading(false);
+    };
+    fetchDictionary();
+  }, []);
+
   let providers: [string, string][] = [];
 
-  if (country === "CN") {
-    providers = Object.entries(dictionary.CN.providers);
-  } else if (
-    country &&
-    city &&
-    dictionary[country] &&
-    "cities" in dictionary[country] &&
-    dictionary[country].cities[city]
-  ) {
-    providers = Object.entries(
-      (dictionary[country].cities as any)[city].providers
-    );
+  if (!loading && dictionary) {
+    if (country === "CN") {
+      providers = Object.entries(dictionary.CN.providers);
+    } else if (
+      country &&
+      city &&
+      dictionary[country] &&
+      "cities" in dictionary[country] &&
+      dictionary[country].cities[city]
+    ) {
+      providers = Object.entries(
+        dictionary[country].cities[city].providers
+      );
+    }
   }
 
   return (
@@ -40,11 +59,11 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full p-2 border rounded ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
-        disabled={disabled}
+        className={`w-full p-2 border rounded ${disabled || loading ? "bg-gray-100 cursor-not-allowed" : ""}`}
+        disabled={disabled || loading}
       >
         <option value="" disabled hidden>
-          Select provider
+          {loading ? "Loading..." : "Select provider"}
         </option>
         {providers.map(([code, name]) => (
           <option key={code} value={code}>

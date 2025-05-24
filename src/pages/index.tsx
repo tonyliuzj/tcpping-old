@@ -215,9 +215,6 @@ export default function Home() {
         {/* Generator controls */}
         <div className="flex flex-col md:flex-row items-stretch gap-2 w-full">
           <div className="flex-1 min-w-[140px]">
-            <ProtocolSelect value={protocol} onChange={handleProtocolChange} />
-          </div>
-          <div className="flex-1 min-w-[140px]">
             <CountrySelect value={country} onChange={handleCountryChange} />
           </div>
           {showProvince && (
@@ -256,6 +253,15 @@ export default function Home() {
               }
             />
           </div>
+          {/* ---- PROTOCOL IS LAST ---- */}
+          <div className="flex-1 min-w-[140px]">
+            <ProtocolSelect
+              value={protocol}
+              onChange={handleProtocolChange}
+              disabled={!provider}
+            />
+          </div>
+          {/* Buttons */}
           <button
             className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition h-fit mt-auto"
             style={{ minWidth: 90 }}

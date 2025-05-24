@@ -1,0 +1,40 @@
+{
+  "CN": {
+    "provinces": {
+      "bj": "Beijing",
+      "yy": "Yunnan Province"
+    },
+    "cities": {
+      "bj": {
+        "aaaa": "Alpha City",
+        "bbbb": "Beta City"
+      },
+      "yy": {
+        "cccc": "Capital City"
+      }
+    },
+    "providers": {
+      "ct": "China Telecom",
+      "cu": "China Unicom",
+      "cm": "China Mobile"
+    }
+  },
+  "US": {
+    "cities": {
+      "nyc": {
+        "name": "New York City",
+        "providers": {
+          "vz": "Verizon",
+          "att": "AT&T"
+        }
+      },
+      "sf": {
+        "name": "San Francisco",
+        "providers": {
+          "att": "AT&T",
+          "tm": "T-Mobile"
+        }
+      }
+    }
+  }
+}
