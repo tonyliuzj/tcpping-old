@@ -35,6 +35,7 @@ export interface IPCardResult {
 export const IPInfo: React.FC<{ ip: string }> = ({ ip }) => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     if (!ip) return;
@@ -45,6 +46,14 @@ export const IPInfo: React.FC<{ ip: string }> = ({ ip }) => {
       .then((data) => setResults(data.results || []))
       .finally(() => setLoading(false));
   }, [ip]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowTop(window.scrollY > 200 && results.length > 0);
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [results]);
 
   if (!ip) return null;
   if (loading) return <div className="text-blue-500">Loading IP info...</div>;
@@ -102,6 +111,17 @@ export const IPInfo: React.FC<{ ip: string }> = ({ ip }) => {
           </div>
         </div>
       ))}
+      {/* Floating Back to Top Button with smooth scroll */}
+      {showTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed right-6 bottom-10 z-50 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-800 transition"
+          style={{ textDecoration: "none" }}
+          title="Back to Top"
+        >
+          ↑ Top
+        </button>
+      )}
     </div>
   );
 };

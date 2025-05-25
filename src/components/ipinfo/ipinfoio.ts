@@ -1,10 +1,35 @@
+// src/components/ipinfo/ipinfoio.ts
+
 const IPINFO_TOKEN = process.env.IPINFO_TOKEN || "64ed841f1b80bd";
 
 export async function fetchIPInfoIO(ip: string) {
   try {
     const r = await fetch(`https://api.ipinfo.io/lite/${ip}?token=${IPINFO_TOKEN}`);
-    const data = await r.json();
-    if (data.error) throw new Error(data.error);
+    const text = await r.text();
+    let data: any = null;
+
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // Not valid JSON (likely an error page)
+      return {
+        provider: "ipinfo.io",
+        ok: false,
+        ip,
+        error: "Non-JSON response from ipinfo.io",
+        raw: text,
+      };
+    }
+
+    if (data.error) {
+      return {
+        provider: "ipinfo.io",
+        ok: false,
+        ip,
+        error: data.error,
+        raw: text,
+      };
+    }
 
     return {
       provider: "ipinfo.io",
@@ -29,6 +54,11 @@ export async function fetchIPInfoIO(ip: string) {
       error: null,
     };
   } catch (e: any) {
-    return { provider: "ipinfo.io", ok: false, ip, error: e.message || "Error" };
+    return {
+      provider: "ipinfo.io",
+      ok: false,
+      ip,
+      error: e.message || "Network or fetch error",
+    };
   }
 }

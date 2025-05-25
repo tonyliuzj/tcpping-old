@@ -1,8 +1,33 @@
+// src/components/ipinfo/ipwhois.ts
+
 export async function fetchIPWhois(ip: string) {
   try {
     const r = await fetch(`https://ipwho.is/${ip}`);
-    const data = await r.json();
-    if (!data.success) throw new Error(data.message || "Lookup failed");
+    const text = await r.text();
+    let data: any = null;
+
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // Not valid JSON (likely an HTML error page or Cloudflare protection)
+      return {
+        provider: "ipwho.is",
+        ok: false,
+        ip,
+        error: "Non-JSON response from ipwho.is",
+        raw: text,
+      };
+    }
+
+    if (!data.success) {
+      return {
+        provider: "ipwho.is",
+        ok: false,
+        ip,
+        error: data.message || "Lookup failed",
+        raw: text,
+      };
+    }
 
     return {
       provider: "ipwho.is",
@@ -27,6 +52,11 @@ export async function fetchIPWhois(ip: string) {
       error: null,
     };
   } catch (e: any) {
-    return { provider: "ipwho.is", ok: false, ip, error: e.message || "Error" };
+    return {
+      provider: "ipwho.is",
+      ok: false,
+      ip,
+      error: e.message || "Network or fetch error",
+    };
   }
 }

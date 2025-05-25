@@ -1,10 +1,35 @@
+// src/components/ipinfo/ipdata.ts
+
 const IPDATA_KEY = process.env.IPDATA_KEY || "YOUR_KEY";
 
 export async function fetchIPData(ip: string) {
   try {
     const r = await fetch(`https://api.ipdata.co/${ip}?api-key=${IPDATA_KEY}`);
-    const data = await r.json();
-    if (data.error || data.message) throw new Error(data.reason || data.message);
+    const text = await r.text();
+    let data: any = null;
+
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // Not valid JSON (likely an error page)
+      return {
+        provider: "ipdata.co",
+        ok: false,
+        ip,
+        error: "Non-JSON response from ipdata.co",
+        raw: text,
+      };
+    }
+
+    if (data.error || data.message) {
+      return {
+        provider: "ipdata.co",
+        ok: false,
+        ip,
+        error: data.reason || data.message || "Unknown ipdata.co error",
+        raw: text,
+      };
+    }
 
     return {
       provider: "ipdata.co",
@@ -29,6 +54,11 @@ export async function fetchIPData(ip: string) {
       error: null,
     };
   } catch (e: any) {
-    return { provider: "ipdata.co", ok: false, ip, error: e.message || "Error" };
+    return {
+      provider: "ipdata.co",
+      ok: false,
+      ip,
+      error: e.message || "Network or fetch error",
+    };
   }
 }

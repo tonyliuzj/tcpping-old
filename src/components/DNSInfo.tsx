@@ -11,7 +11,6 @@ export const DNSInfo: React.FC<{ input: string }> = ({ input }) => {
   const [dnsData, setDnsData] = useState<DNSAPIResponse>({});
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [ips, setIps] = useState<string[]>([]);
   const [modal, setModal] = useState<{ content: string; open: boolean }>({ content: "", open: false });
 
   useEffect(() => {
@@ -19,22 +18,37 @@ export const DNSInfo: React.FC<{ input: string }> = ({ input }) => {
     setLoading(true);
     setErr(null);
     setDnsData({});
-    setIps([]);
     fetch(`/api/dns?host=${encodeURIComponent(input)}`)
       .then((res) => res.json())
-      .then((data) => {
-        setDnsData(data);
-        let _ips: string[] = [
-          ...(data.A ? data.A.map((r: any) => r.data) : []),
-          ...(data.AAAA ? data.AAAA.map((r: any) => r.data) : []),
-        ];
-        setIps(Array.from(new Set(_ips)));
-      })
+      .then((data) => setDnsData(data))
       .catch((e) => setErr("Failed to load DNS records"))
       .finally(() => setLoading(false));
   }, [input]);
 
+  // Renders an IP address as a clickable link that jumps to its info section
+  function RenderIPLink({ value }: { value: string }) {
+    const isLong = value.length > 60;
+    const short = isLong ? value.slice(0, 57) + "..." : value;
+    return (
+      <a
+        href={`#ipinfo-${value}`}
+        className="inline-block bg-gray-200 px-2 py-1 rounded text-xs font-mono mb-1 cursor-pointer hover:bg-blue-200 text-blue-800 underline"
+        title={value}
+        style={{ wordBreak: "break-all" }}
+      >
+        {short}
+      </a>
+    );
+  }
+
   function RenderRecordValue({ value }: { value: string }) {
+    // If this is an IP, use RenderIPLink, else fallback to modal logic for long strings
+    if (
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(value) || // IPv4
+      /^[a-fA-F0-9:]+$/.test(value) // IPv6 (not super strict, but works)
+    ) {
+      return <RenderIPLink value={value} />;
+    }
     if (value.length > 60) {
       const short = value.slice(0, 57) + "...";
       return (
@@ -146,16 +160,72 @@ export const DNSInfo: React.FC<{ input: string }> = ({ input }) => {
         );
       })()}
 
-      {/* Show IP info cards for all A/AAAA */}
-      {ips.length > 0 && (
-        <div>
-          <h3 className="font-semibold mb-2">IP Geolocation</h3>
-          {ips.map((ip) => (
-            <div key={ip} className="mb-4">
-              <IPInfo ip={ip} />
+      {/* DNS Type Sections (for anchor links) */}
+      {dnsTypes.map((type) =>
+        dnsData[type]?.length ? (
+          <div key={type} className="mb-8">
+            <h3
+              id={`dns-section-${type}`}
+              className="font-semibold text-lg mb-3 scroll-mt-24"
+            >
+              {type} Records
+            </h3>
+            <div className="flex flex-col gap-4">
+              {dnsData[type].map((record, idx) => {
+                // For A and AAAA records, show IP Geolocation directly below each IP, with anchor
+                if ((type === "A" || type === "AAAA") && record.data) {
+                  return (
+                    <div key={idx} className="mb-2">
+                      <RenderIPLink value={record.data} />
+                      <div id={`ipinfo-${record.data}`} className="mt-2 scroll-mt-24">
+                        <IPInfo ip={record.data} />
+                      </div>
+                    </div>
+                  );
+                }
+                // Other record types remain unchanged
+                return record.data ? (
+                  <RenderRecordValue key={idx} value={record.data} />
+                ) : record.exchange ? (
+                  <span
+                    key={idx}
+                    className="inline-block bg-green-200 px-2 py-1 rounded text-xs font-mono mb-1"
+                  >
+                    {record.exchange}
+                    {record.priority !== undefined && (
+                      <span className="ml-1 text-gray-500">
+                        ({record.priority})
+                      </span>
+                    )}
+                  </span>
+                ) : record.nameserver ? (
+                  <span
+                    key={idx}
+                    className="inline-block bg-yellow-100 px-2 py-1 rounded text-xs font-mono mb-1"
+                  >
+                    {record.nameserver}
+                  </span>
+                ) : record.txt ? (
+                  <RenderRecordValue key={idx} value={record.txt} />
+                ) : record.hostmaster ? (
+                  <span
+                    key={idx}
+                    className="inline-block bg-orange-100 px-2 py-1 rounded text-xs font-mono mb-1"
+                  >
+                    {record.hostmaster}
+                  </span>
+                ) : (
+                  <span
+                    key={idx}
+                    className="inline-block bg-gray-100 px-2 py-1 rounded text-xs font-mono mb-1"
+                  >
+                    {JSON.stringify(record)}
+                  </span>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : null
       )}
 
       {/* Modal for showing full record */}
