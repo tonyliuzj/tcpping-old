@@ -1,38 +1,68 @@
 {
   "CN": {
+    "name": "China",
     "provinces": {
-      "bj": "Beijing",
-      "yy": "Yunnan Province"
-    },
-    "cities": {
       "bj": {
-        "aaaa": "Alpha City",
-        "bbbb": "Beta City"
+        "name": "Beijing",
+        "providers": {
+          "ct": { "name": "China Telecom", "v4": true, "v6": false },
+          "cu": { "name": "China Unicom", "v4": true, "v6": true },
+          "cm": { "name": "China Mobile", "v4": false, "v6": true }
+        },
+        "cities": {
+          "aaaa": {
+            "name": "Alpha City",
+            "providers": {
+              "ct": { "name": "China Telecom", "v4": true, "v6": false },
+              "cu": { "name": "China Unicom", "v4": true, "v6": true },
+              "cm": { "name": "China Mobile", "v4": false, "v6": true }
+            }
+          },
+          "bbbb": {
+            "name": "Beta City",
+            "providers": {
+              "ct": { "name": "China Telecom", "v4": true, "v6": false },
+              "cu": { "name": "China Unicom", "v4": true, "v6": true },
+              "cm": { "name": "China Mobile", "v4": false, "v6": true }
+            }
+          }
+        }
       },
       "yy": {
-        "cccc": "Capital City"
+        "name": "Yunnan Province",
+        "providers": {
+          "ct": { "name": "China Telecom", "v4": true, "v6": false },
+          "cu": { "name": "China Unicom", "v4": true, "v6": true },
+          "cm": { "name": "China Mobile", "v4": false, "v6": true }
+        },
+        "cities": {
+          "cccc": {
+            "name": "Capital City",
+            "providers": {
+              "ct": { "name": "China Telecom", "v4": true, "v6": false },
+              "cu": { "name": "China Unicom", "v4": true, "v6": true },
+              "cm": { "name": "China Mobile", "v4": false, "v6": true }
+            }
+          }
+        }
       }
-    },
-    "providers": {
-      "ct": "China Telecom",
-      "cu": "China Unicom",
-      "cm": "China Mobile"
     }
   },
   "US": {
+    "name": "United States",
     "cities": {
       "nyc": {
         "name": "New York City",
         "providers": {
-          "vz": "Verizon",
-          "att": "AT&T"
+          "vz": { "name": "Verizon", "v4": true, "v6": false },
+          "att": { "name": "AT&T", "v4": true, "v6": true }
         }
       },
       "sf": {
         "name": "San Francisco",
         "providers": {
-          "att": "AT&T",
-          "tm": "T-Mobile"
+          "att": { "name": "AT&T", "v4": true, "v6": true },
+          "tm": { "name": "T-Mobile", "v4": false, "v6": true }
         }
       }
     }

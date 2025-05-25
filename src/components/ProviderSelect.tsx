@@ -39,17 +39,40 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
 
   if (!loading && dictionary) {
     if (country === "CN") {
-      providers = Object.entries(dictionary.CN.providers);
+      // City-level providers (highest priority)
+      if (
+        province &&
+        city &&
+        dictionary.CN.provinces[province] &&
+        dictionary.CN.provinces[province].cities &&
+        dictionary.CN.provinces[province].cities[city] &&
+        dictionary.CN.provinces[province].cities[city].providers
+      ) {
+        providers = Object.entries(
+          dictionary.CN.provinces[province].cities[city].providers
+        ).map(([code, providerObj]: [string, any]) => [code, providerObj.name]);
+      }
+      // Province-level providers if no city
+      else if (
+        province &&
+        dictionary.CN.provinces[province] &&
+        dictionary.CN.provinces[province].providers
+      ) {
+        providers = Object.entries(
+          dictionary.CN.provinces[province].providers
+        ).map(([code, providerObj]: [string, any]) => [code, providerObj.name]);
+      }
     } else if (
       country &&
       city &&
       dictionary[country] &&
       "cities" in dictionary[country] &&
-      dictionary[country].cities[city]
+      dictionary[country].cities[city] &&
+      dictionary[country].cities[city].providers
     ) {
       providers = Object.entries(
         dictionary[country].cities[city].providers
-      );
+      ).map(([code, providerObj]: [string, any]) => [code, providerObj.name]);
     }
   }
 
@@ -59,7 +82,9 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full p-2 border rounded ${disabled || loading ? "bg-gray-100 cursor-not-allowed" : ""}`}
+        className={`w-full p-2 border rounded ${
+          disabled || loading ? "bg-gray-100 cursor-not-allowed" : ""
+        }`}
         disabled={disabled || loading}
       >
         <option value="" disabled hidden>

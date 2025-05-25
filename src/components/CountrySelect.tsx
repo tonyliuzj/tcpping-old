@@ -20,24 +20,12 @@ const CountrySelect: React.FC<CountrySelectProps> = ({ value, onChange }) => {
       const res = await fetch("/api/dictionary");
       const data = await res.json();
 
-      // Extract country codes and map to display names
-      const list: CountryItem[] = Object.keys(data).map((code) => {
-        let name: string;
-        switch (code) {
-          case "CN":
-            name = "China";
-            break;
-          case "US":
-            name = "United States";
-            break;
-          case "DE":
-            name = "Germany";
-            break;
-          default:
-            name = code;
-        }
-        return { code, name };
-      });
+      // Use the "name" property from each country object
+      const list: CountryItem[] = Object.keys(data).map((code) => ({
+        code,
+        name: data[code].name || code
+      }));
+
       setCountryList(list);
       setLoading(false);
     };

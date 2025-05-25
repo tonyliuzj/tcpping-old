@@ -8,7 +8,6 @@ interface CitySelectProps {
   disabled?: boolean;
 }
 
-// For TS typing, you can extend this as needed (or use `any` if in a hurry)
 interface DictionaryType {
   [country: string]: any;
 }
@@ -38,8 +37,14 @@ const CitySelect: React.FC<CitySelectProps> = ({
 
   if (!loading && dictionary) {
     if (country === "CN") {
-      if (province && dictionary.CN.cities[province]) {
-        cities = Object.entries(dictionary.CN.cities[province]);
+      if (
+        province &&
+        dictionary.CN.provinces[province] &&
+        dictionary.CN.provinces[province].cities
+      ) {
+        cities = Object.entries(dictionary.CN.provinces[province].cities).map(
+          ([code, obj]: [string, any]) => [code, obj.name]
+        );
       }
     } else if (country && dictionary[country] && "cities" in dictionary[country]) {
       const cityDict = dictionary[country].cities;

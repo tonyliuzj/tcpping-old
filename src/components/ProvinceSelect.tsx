@@ -13,7 +13,7 @@ const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
   onChange,
   disabled,
 }) => {
-  const [provinces, setProvinces] = useState<{ [code: string]: string }>({});
+  const [provinces, setProvinces] = useState<{ [code: string]: any }>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
       setLoading(true);
       const res = await fetch("/api/dictionary");
       const data = await res.json();
-      setProvinces(data.CN.provinces);
+      setProvinces(data?.CN?.provinces || {});
       setLoading(false);
     };
     fetchDictionary();
@@ -42,9 +42,9 @@ const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
         <option value="" disabled hidden>
           {loading ? "Loading..." : "Select province"}
         </option>
-        {Object.entries(provinces).map(([code, name]) => (
+        {Object.entries(provinces).map(([code, obj]: [string, any]) => (
           <option key={code} value={code}>
-            {name}
+            {obj.name}
           </option>
         ))}
       </select>

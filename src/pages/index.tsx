@@ -18,9 +18,9 @@ const defaultState = {
 // --- Utilities
 function cleanHostname(input: string): string {
   let value = input.trim();
-  value = value.replace(/^https?:\/\//i, ""); // Remove http:// or https://
-  value = value.replace(/\/.*$/, "");         // Remove any path
-  value = value.replace(/:.*$/, "");          // Remove any port
+  value = value.replace(/^https?:\/\//i, "");
+  value = value.replace(/\/.*$/, "");
+  value = value.replace(/:.*$/, "");
   return value;
 }
 function isIPv4(ip: string) {
@@ -69,13 +69,53 @@ export default function Home() {
   const [dnsInfoResults, setDnsInfoResults] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // New: Track status of generated domain (A/AAAA records)
   const [domainStatus, setDomainStatus] = useState<"unknown" | "valid" | "invalid">("unknown");
   const [domainChecking, setDomainChecking] = useState(false);
 
+  // ---- FIND SELECTED PROVIDER OBJECT ----
+  const [providerObj, setProviderObj] = useState<{ name: string, v4: boolean, v6: boolean } | null>(null);
+
+  useEffect(() => {
+    let fetchProvider = async () => {
+      let data;
+      try {
+        const res = await fetch("/api/dictionary");
+        data = await res.json();
+      } catch {
+        setProviderObj(null);
+        return;
+      }
+      let found = null;
+      if (country === "CN") {
+        if (
+          province &&
+          city &&
+          provider &&
+          data?.CN?.provinces?.[province]?.cities?.[city]?.providers?.[provider]
+        ) {
+          found = data.CN.provinces[province].cities[city].providers[provider];
+        } else if (
+          province &&
+          provider &&
+          data?.CN?.provinces?.[province]?.providers?.[provider]
+        ) {
+          found = data.CN.provinces[province].providers[provider];
+        }
+      } else if (country && provider && data?.[country]?.cities) {
+        if (
+          city &&
+          data[country].cities[city]?.providers?.[provider]
+        ) {
+          found = data[country].cities[city].providers[provider];
+        }
+      }
+      setProviderObj(found);
+    };
+    fetchProvider();
+  }, [country, province, city, provider]);
+
   // --- AUTO-REMOVE http/https AND PATH FROM INPUT ---
   useEffect(() => {
-    // Remove protocol, port, and path as user types/pastes
     const cleaned = inputValue
       .replace(/^https?:\/\//i, "")
       .replace(/\/.*$/, "")
@@ -85,7 +125,6 @@ export default function Home() {
     }
     // eslint-disable-next-line
   }, [inputValue]);
-  // -----------------
 
   // Recognize the type of input on every input change, but DO NOT fetch
   useEffect(() => {
@@ -101,6 +140,24 @@ export default function Home() {
     if (isHostname(val)) return setLookupType("hostname");
     return setLookupType("invalid");
   }, [inputValue]);
+
+  // ---- AUTO-RESET OR AUTO-SELECT PROTOCOL WHEN PROVIDER CHANGES ----
+  useEffect(() => {
+    if (!providerObj) {
+      setProtocol("");
+      return;
+    }
+    const available: Protocol[] = [];
+    if (providerObj.v4 && providerObj.v6) available.push("dual");
+    if (providerObj.v4) available.push("v4");
+    if (providerObj.v6) available.push("v6");
+    // If current protocol is not valid, auto-select the only available option or reset
+    if (!available.includes(protocol as Protocol)) {
+      setProtocol(available.length === 1 ? available[0] : "");
+    }
+    // eslint-disable-next-line
+  }, [providerObj]);
+  // -------------------------------------------------
 
   // Generator logic (now async, and fixed for CN!)
   const handleGenerate = async () => {
@@ -149,21 +206,25 @@ export default function Home() {
     setProvince("");
     setCity("");
     setProvider("");
+    setProtocol(""); // Reset protocol too!
     setCopied(false);
   };
   const handleProvinceChange = (val: string) => {
     setProvince(val);
     setCity("");
     setProvider("");
+    setProtocol(""); // Reset protocol too!
     setCopied(false);
   };
   const handleCityChange = (val: string) => {
     setCity(val);
     setProvider("");
+    setProtocol(""); // Reset protocol too!
     setCopied(false);
   };
   const handleProviderChange = (val: string) => {
     setProvider(val);
+    // setProtocol(""); // NOT NEEDED: Now handled by the auto-select useEffect above
     setCopied(false);
   };
   const handleProtocolChange = (val: Protocol) => {
@@ -259,6 +320,8 @@ export default function Home() {
               value={protocol}
               onChange={handleProtocolChange}
               disabled={!provider}
+              v4={providerObj?.v4}
+              v6={providerObj?.v6}
             />
           </div>
           {/* Buttons */}
