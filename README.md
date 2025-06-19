@@ -5,7 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ### Run by script (One Click Install)
 
 ```bash
-curl -sSL https://github.com/isawebapp/Shrinx/releases/latest/download/shrinx.sh -o shrinx.sh && chmod +x shrinx.sh && bash shrinx.sh
+curl -sSL https://github.com/isawebapp/Shrinx/releases/latest/download/tcpping.sh -o tcpping.sh && chmod +x tcpping.sh && bash tcpping.sh
 ```
 
 First, run the development server:
