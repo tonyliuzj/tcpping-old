@@ -85,32 +85,17 @@ install_tcpping() {
 
   # 6. Env vars
   echo "🔧 Configuring environment variables..."
-  read -p "🔑 Cloudflare Turnstile site key: " SITE_KEY
-  read -p "🔑 Cloudflare Turnstile secret key: " SECRET_KEY
-  read -p "🌐 Allowed domains (comma-separated, e.g. localhost:3000,example.com): " DOMAINS
-  read -p "👤 Admin username: " ADMIN_USER
-  read -s -p "🔒 Admin password: " ADMIN_PASS
-  echo ""
-  read -s -p "🔐 Session password (min 32 characters): " SESSION_PASS
-  echo ""
-  while [ ${#SESSION_PASS} -lt 32 ]; do
-    echo "❌ Session password must be at least 32 characters"
-    read -s -p "🔐 Please enter a session password (min 32 characters): " SESSION_PASS
-    echo ""
-  done
+  read -p "🔑 IPGEOLOCATION key: " IPGEOLOCATION
+  read -p "🔑 IPDATA key: " IPDATA
+  read -p "🔑 IPINFO key: " IPINFO
   read -p "🚪 Port to serve the app on (default 3000): " APP_PORT
   APP_PORT=${APP_PORT:-3000}
 
   cat > .env.local <<EOF
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=$SITE_KEY
-TURNSTILE_SECRET_KEY=$SECRET_KEY
+IPGEOLOCATION_KEY=$IPGEOLOCATION
+IPDATA_KEY=$IPDATA
+IPINFO_TOKEN=$IPINFO
 
-ADMIN_USERNAME=$ADMIN_USER
-ADMIN_PASSWORD=$ADMIN_PASS
-
-SESSION_PASSWORD=$SESSION_PASS
-
-DOMAINS=$DOMAINS
 PORT=$APP_PORT
 EOF
 
