@@ -1,11 +1,15 @@
 import React from "react";
 import dynamic from "next/dynamic";
 const WorldMap = dynamic(() => import("./WorldMap"), { ssr: false });
+import { 
+  DictionaryType, 
+  IpInfoResult 
+} from "../types";
 
 interface MapPanelProps {
-  dictionary: any;
+  dictionary: DictionaryType | null | undefined;
   lookupType: "empty" | "ipv4" | "ipv6" | "hostname" | "invalid";
-  ipInfoResults: any[] | null;
+  ipInfoResults: IpInfoResult[] | null;
   selectedCountry: string;
   selectedProvince: string;
   selectedCity: string;
@@ -62,7 +66,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
     mapCenter = [focusObj.lat, focusObj.lon];
     mapZoom = 8;
     if (provData.cities) {
-      markerPoints = Object.entries(provData.cities).map(([cityCode, c]: [string, any]) => ({
+      markerPoints = Object.entries(provData.cities).map(([cityCode, c]) => ({
         name: c.name,
         code: cityCode,
         lat: c.loc.lat,
@@ -80,7 +84,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
     )
   ) {
     let cityData: { name: string; loc: { lat: number; lon: number } } | undefined;
-    let cityCode: string = selectedCity;
+    const cityCode: string = selectedCity;
     if (selectedCountry === "CN" && selectedProvince && dictionary?.CN?.provinces?.[selectedProvince]?.cities?.[selectedCity]) {
       cityData = dictionary.CN.provinces[selectedProvince].cities[selectedCity];
     } else if (selectedCountry !== "CN" && dictionary?.[selectedCountry]?.cities?.[selectedCity]) {
@@ -114,7 +118,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
     mapMode = "country";
     mapCenter = [focusObj.lat, focusObj.lon];
     mapZoom = 5;
-    markerPoints = Object.entries(countryData.provinces).map(([provCode, p]: [string, any]) => ({
+    markerPoints = Object.entries(countryData.provinces!).map(([provCode, p]) => ({
       name: p.name,
       code: provCode,
       lat: p.loc.lat,
@@ -137,7 +141,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
     mapMode = "country";
     mapCenter = [focusObj.lat, focusObj.lon];
     mapZoom = 5;
-    markerPoints = Object.entries(countryData.cities).map(([cityCode, c]: [string, any]) => ({
+    markerPoints = Object.entries(countryData.cities!).map(([cityCode, c]) => ({
       name: c.name,
       code: cityCode,
       lat: c.loc.lat,
@@ -157,7 +161,6 @@ const MapPanel: React.FC<MapPanelProps> = ({
     >
       <WorldMap
         mode={mapMode}
-        countryData={focusObj}
         cities={markerPoints}
         ipLocations={ipLocations}
         center={mapCenter}

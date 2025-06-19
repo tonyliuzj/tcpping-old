@@ -1,20 +1,47 @@
 // src/components/ipinfo/ipapi.ts
 
+interface IPApiResponse {
+  status: string;
+  query: string;
+  city: string;
+  regionName: string;
+  country: string;
+  countryCode: string;
+  lat: number;
+  lon: number;
+  as?: string;
+  isp: string;
+  org?: string;
+  timezone: string;
+  message?: string;
+}
+
 export async function fetchIPApi(ip: string) {
   try {
     const r = await fetch(`http://ip-api.com/json/${ip}`);
     const text = await r.text();
-    let data: any = null;
+    let data: IPApiResponse | null = null;
 
     try {
       data = JSON.parse(text);
-    } catch (e) {
+    } catch {
       // Not valid JSON (likely an HTML error page or Cloudflare error)
       return {
         provider: "ip-api.com",
         ok: false,
         ip,
         error: "Non-JSON response from ip-api.com",
+        raw: text,
+      };
+    }
+
+    if (!data) {
+      // This should never happen, but added for type safety
+      return {
+        provider: "ip-api.com",
+        ok: false,
+        ip,
+        error: "Unexpected null data after JSON parse",
         raw: text,
       };
     }
@@ -51,12 +78,12 @@ export async function fetchIPApi(ip: string) {
       flag: undefined,
       error: null,
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       provider: "ip-api.com",
       ok: false,
       ip,
-      error: e.message || "Network or fetch error",
+      error: e instanceof Error ? e.message : "Network or fetch error",
     };
   }
 }

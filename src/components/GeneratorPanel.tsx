@@ -4,6 +4,12 @@ import CountrySelect from "./CountrySelect";
 import ProvinceSelect from "./ProvinceSelect";
 import CitySelect from "./CitySelect";
 import ProviderSelect from "./ProviderSelect";
+import { DictionaryType } from "../types";
+
+interface ProviderInfo {
+  v4: boolean;
+  v6: boolean;
+}
 
 async function checkDomainValid(domain: string) {
   try {
@@ -38,7 +44,7 @@ interface GeneratorPanelProps {
   setSelectedCountry?: (code: string) => void;
   setSelectedProvince?: (code: string) => void;
   setSelectedCity?: (code: string) => void;
-  dictionary?: any;
+  dictionary?: DictionaryType;
 }
 
 const GeneratorPanel: React.FC<GeneratorPanelProps> = ({
@@ -55,26 +61,29 @@ const GeneratorPanel: React.FC<GeneratorPanelProps> = ({
   const [province, setProvince] = useState<string>(defaultState.province);
   const [city, setCity] = useState<string>(defaultState.city);
   const [provider, setProvider] = useState<string>(defaultState.provider);
-  const [providerObj, setProviderObj] = useState<{ name: string, v4: boolean, v6: boolean } | null>(null);
+  const [providerObj, setProviderObj] = useState<ProviderInfo | null>(null);
 
   // Find provider object
   useEffect(() => {
-    let data = dictionary;
+    const data = dictionary;
     if (!data) return setProviderObj(null);
     let found = null;
-    if (country === "CN") {
-      if (province && city && provider && data?.CN?.provinces?.[province]?.cities?.[city]?.providers?.[provider]) {
-        found = data.CN.provinces[province].cities[city].providers[provider];
-      } else if (province && provider && data?.CN?.provinces?.[province]?.providers?.[provider]) {
-        found = data.CN.provinces[province].providers[provider];
-      }
-    } else if (country && provider && data?.[country]?.cities) {
-      if (city && data[country].cities[city]?.providers?.[provider]) {
-        found = data[country].cities[city].providers[provider];
-      }
+  if (country === "CN") {
+    const cnData = data?.CN;
+    if (province && city && provider && cnData?.provinces?.[province]?.cities?.[city]?.providers?.[provider]) {
+      found = cnData.provinces[province].cities[city].providers[provider];
+    } else if (province && provider && cnData?.provinces?.[province]?.providers?.[provider]) {
+      found = cnData.provinces[province].providers[provider];
     }
+  } else if (country && provider) {
+    const countryData = data?.[country];
+    if (city && countryData?.cities?.[city]?.providers?.[provider]) {
+      found = countryData.cities[city].providers[provider];
+    } else if (countryData?.providers?.[provider]) {
+      found = countryData.providers[provider];
+    }
+  }
     setProviderObj(found);
-    // eslint-disable-next-line
   }, [country, province, city, provider, dictionary]);
 
   // Reset or auto-select protocol when provider changes
@@ -90,7 +99,7 @@ const GeneratorPanel: React.FC<GeneratorPanelProps> = ({
     if (!available.includes(protocol as Protocol)) {
       setProtocol(available.length === 1 ? available[0] : "");
     }
-  }, [providerObj]);
+  }, [providerObj, protocol]);
 
   // Inform parent of selections
   useEffect(() => {

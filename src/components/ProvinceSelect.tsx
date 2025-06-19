@@ -7,13 +7,17 @@ interface ProvinceSelectProps {
   disabled?: boolean;
 }
 
+interface ProvinceInfo {
+  name: string;
+}
+
 const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
   country,
   value,
   onChange,
   disabled,
 }) => {
-  const [provinces, setProvinces] = useState<{ [code: string]: any }>({});
+  const [provinces, setProvinces] = useState<{ [code: string]: ProvinceInfo }>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +46,7 @@ const ProvinceSelect: React.FC<ProvinceSelectProps> = ({
         <option value="" disabled hidden>
           {loading ? "Loading..." : "Select province"}
         </option>
-        {Object.entries(provinces).map(([code, obj]: [string, any]) => (
+        {Object.entries(provinces).map(([code, obj]) => (
           <option key={code} value={code}>
             {obj.name}
           </option>

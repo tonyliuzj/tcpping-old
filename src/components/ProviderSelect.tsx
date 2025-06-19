@@ -9,8 +9,37 @@ interface ProviderSelectProps {
   disabled?: boolean;
 }
 
+interface ProviderInfo {
+  name: string;
+}
+
 interface DictionaryType {
-  [country: string]: any;
+  [country: string]: {
+    provinces?: {
+      [provinceCode: string]: {
+        name: string;
+        providers?: {
+          [providerCode: string]: ProviderInfo;
+        };
+        cities?: {
+          [cityCode: string]: {
+            name: string;
+            providers: {
+              [providerCode: string]: ProviderInfo;
+            };
+          };
+        };
+      };
+    };
+    cities?: {
+      [cityCode: string]: {
+        name: string;
+        providers: {
+          [providerCode: string]: ProviderInfo;
+        };
+      };
+    };
+  };
 }
 
 const ProviderSelect: React.FC<ProviderSelectProps> = ({
@@ -43,36 +72,29 @@ const ProviderSelect: React.FC<ProviderSelectProps> = ({
       if (
         province &&
         city &&
-        dictionary.CN.provinces[province] &&
-        dictionary.CN.provinces[province].cities &&
-        dictionary.CN.provinces[province].cities[city] &&
-        dictionary.CN.provinces[province].cities[city].providers
+        dictionary.CN?.provinces?.[province]?.cities?.[city]?.providers
       ) {
         providers = Object.entries(
           dictionary.CN.provinces[province].cities[city].providers
-        ).map(([code, providerObj]: [string, any]) => [code, providerObj.name]);
+        ).map(([code, providerObj]) => [code, providerObj.name]);
       }
       // Province-level providers if no city
       else if (
         province &&
-        dictionary.CN.provinces[province] &&
-        dictionary.CN.provinces[province].providers
+        dictionary.CN?.provinces?.[province]?.providers
       ) {
         providers = Object.entries(
           dictionary.CN.provinces[province].providers
-        ).map(([code, providerObj]: [string, any]) => [code, providerObj.name]);
+        ).map(([code, providerObj]) => [code, providerObj.name]);
       }
     } else if (
       country &&
       city &&
-      dictionary[country] &&
-      "cities" in dictionary[country] &&
-      dictionary[country].cities[city] &&
-      dictionary[country].cities[city].providers
+      dictionary[country]?.cities?.[city]?.providers
     ) {
       providers = Object.entries(
         dictionary[country].cities[city].providers
-      ).map(([code, providerObj]: [string, any]) => [code, providerObj.name]);
+      ).map(([code, providerObj]) => [code, providerObj.name]);
     }
   }
 

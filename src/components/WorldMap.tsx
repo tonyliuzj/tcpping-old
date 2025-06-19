@@ -35,7 +35,6 @@ const markerIcon = new L.Icon({
 
 export interface WorldMapProps {
   mode: "default" | "country" | "province" | "city" | "lookup";
-  countryData?: { name: string; code: string; lat: number; lon: number };
   cities?: { name: string; lat: number; lon: number }[];
   ipLocations?: { ip: string; label?: string; lat: number; lon: number }[];
   center?: [number, number];
@@ -44,7 +43,6 @@ export interface WorldMapProps {
 
 const WorldMap: React.FC<WorldMapProps> = ({
   mode,
-  countryData,
   cities = [],
   ipLocations = [],
   center,

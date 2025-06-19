@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fetchIPInfoIO(ip),
     ]);
     res.json({ ok: true, ip, results });
-  } catch (e: any) {
-    res.status(500).json({ ok: false, error: e.message || "Unknown error" });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : "Unknown error";
+    res.status(500).json({ ok: false, error: errorMessage });
   }
 }

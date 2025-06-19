@@ -3,8 +3,17 @@ import { IPInfo } from "./IPInfo";
 
 const dnsTypes = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
 
+export interface DNSRecord {
+  data?: string;
+  exchange?: string;
+  priority?: number;
+  nameserver?: string;
+  txt?: string;
+  hostmaster?: string;
+}
+
 export interface DNSAPIResponse {
-  [rtype: string]: any[];
+  [rtype: string]: DNSRecord[];
 }
 
 export const DNSInfo: React.FC<{ input: string }> = ({ input }) => {
@@ -21,7 +30,7 @@ export const DNSInfo: React.FC<{ input: string }> = ({ input }) => {
     fetch(`/api/dns?host=${encodeURIComponent(input)}`)
       .then((res) => res.json())
       .then((data) => setDnsData(data))
-      .catch((e) => setErr("Failed to load DNS records"))
+      .catch(() => setErr("Failed to load DNS records"))
       .finally(() => setLoading(false));
   }, [input]);
 
@@ -112,7 +121,7 @@ export const DNSInfo: React.FC<{ input: string }> = ({ input }) => {
                         </td>
                         <td className="py-2 px-2 break-words">
                           <div className="flex flex-wrap gap-1">
-                            {dnsData[type]
+                              {dnsData[type]
                               .map((r, idx) =>
                                 r.data ? (
                                   <RenderRecordValue key={idx} value={r.data} />

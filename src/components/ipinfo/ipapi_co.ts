@@ -1,14 +1,28 @@
 // src/components/ipinfo/ipapi_co.ts
 
+interface IPApiCoResponse {
+  error?: boolean;
+  reason?: string;
+  message?: string;
+  ip?: string;
+  city?: string;
+  region?: string;
+  country_name?: string;
+  country_code?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+}
+
 export async function fetchIPApiCo(ip: string) {
   try {
     const r = await fetch(`https://ipapi.co/${ip}/json/`);
     const text = await r.text();
-    let data: any = null;
+    let data: IPApiCoResponse | null = null;
 
     try {
       data = JSON.parse(text);
-    } catch (e) {
+    } catch {
       // Not valid JSON (likely an HTML error page)
       return {
         provider: "ipapi.co",
@@ -16,6 +30,16 @@ export async function fetchIPApiCo(ip: string) {
         ip,
         error: "Non-JSON response from ipapi.co",
         raw: text, // Optional: keep for debugging or support
+      };
+    }
+
+    if (!data) {
+      return {
+        provider: "ipapi.co",
+        ok: false,
+        ip,
+        error: "Unexpected null data after JSON parse",
+        raw: text,
       };
     }
 
@@ -51,12 +75,12 @@ export async function fetchIPApiCo(ip: string) {
       flag: undefined,
       error: null,
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       provider: "ipapi.co",
       ok: false,
       ip,
-      error: e.message || "Network or fetch error",
+      error: e instanceof Error ? e.message : "Network or fetch error",
     };
   }
 }

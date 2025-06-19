@@ -6,6 +6,8 @@ import { IPInfo } from "../components/IPInfo";
 import { DNSInfo } from "../components/DNSInfo";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { cleanHostname, isIPv4, isIPv6, isHostname } from "../utils/validation";
+import { IPCardResult } from "../components/IPInfo";
+import { DictionaryType } from "../types";
 
 export default function Home() {
   const isMobile = useIsMobile();
@@ -13,15 +15,15 @@ export default function Home() {
   const [inputValue, setInputValue] = useState<string>("");
   const [lookupType, setLookupType] = useState<"empty" | "ipv4" | "ipv6" | "hostname" | "invalid">("empty");
   const [fetching, setFetching] = useState(false);
-  const [ipInfoResults, setIpInfoResults] = useState<any[] | null>(null);
-  const [dnsInfoResults, setDnsInfoResults] = useState<any | null>(null);
+  const [ipInfoResults, setIpInfoResults] = useState<IPCardResult[] | null>(null);
+  const [dnsInfoResults, setDnsInfoResults] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [domainStatus, setDomainStatus] = useState<"unknown" | "valid" | "invalid">("unknown");
   const [domainChecking, setDomainChecking] = useState(false);
   const [copied, setCopied] = useState<boolean>(false);
 
   // Map selection states
-  const [dictionary, setDictionary] = useState<any>(null);
+  const [dictionary, setDictionary] = useState<DictionaryType | undefined>(undefined);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("");
@@ -32,9 +34,9 @@ export default function Home() {
       try {
         const res = await fetch("/api/dictionary");
         const dict = await res.json();
-        setDictionary(dict);
-      } catch {
-        setDictionary(null);
+      setDictionary(dict);
+    } catch {
+      setDictionary(undefined);
       }
     })();
   }, []);
@@ -71,8 +73,8 @@ export default function Home() {
       } else if (lookupType === "hostname") {
         setDnsInfoResults(val); // Let DNSInfo handle the fetch/render
       }
-    } catch (e: any) {
-      setError(e.message || "Error fetching info");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error fetching info");
     } finally {
       setFetching(false);
     }

@@ -8,8 +8,23 @@ interface CitySelectProps {
   disabled?: boolean;
 }
 
+interface CityInfo {
+  name: string;
+}
+
+interface ProvinceInfo {
+  name: string;
+  cities?: Record<string, CityInfo>;
+}
+
+interface CountryInfo {
+  name: string;
+  provinces?: Record<string, ProvinceInfo>;
+  cities?: Record<string, CityInfo>;
+}
+
 interface DictionaryType {
-  [country: string]: any;
+  [country: string]: CountryInfo;
 }
 
 const CitySelect: React.FC<CitySelectProps> = ({
@@ -39,16 +54,15 @@ const CitySelect: React.FC<CitySelectProps> = ({
     if (country === "CN") {
       if (
         province &&
-        dictionary.CN.provinces[province] &&
-        dictionary.CN.provinces[province].cities
+        dictionary.CN?.provinces?.[province]?.cities
       ) {
-        cities = Object.entries(dictionary.CN.provinces[province].cities).map(
-          ([code, obj]: [string, any]) => [code, obj.name]
+        cities = Object.entries(dictionary.CN.provinces[province].cities!).map(
+          ([code, obj]) => [code, obj.name]
         );
       }
-    } else if (country && dictionary[country] && "cities" in dictionary[country]) {
-      const cityDict = dictionary[country].cities;
-      cities = Object.entries(cityDict).map(([code, obj]: [string, any]) => [
+    } else if (country && dictionary[country] && dictionary[country].cities) {
+      const cityDict = dictionary[country].cities!;
+      cities = Object.entries(cityDict).map(([code, obj]) => [
         code,
         obj.name,
       ]);

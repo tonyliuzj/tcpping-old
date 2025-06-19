@@ -2,12 +2,19 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 const dnsTypes = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
 
+interface DNSAnswer {
+  name: string;
+  type: number;
+  TTL: number;
+  data: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { host } = req.query;
   if (!host || typeof host !== "string") {
     return res.status(400).json({ error: "Hostname required" });
   }
-  let all: { [rtype: string]: any[] } = {};
+  const all: { [rtype: string]: DNSAnswer[] } = {};
   await Promise.all(
     dnsTypes.map(async (rtype) => {
       try {

@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-
-const providers = [
-  { id: "ipapi", label: "ip-api.com" },
-  { id: "ipwhois", label: "ipwho.is" },
-  { id: "ipgeolocation", label: "ipgeolocation.io" },
-  { id: "ipdata", label: "ipdata.co" },
-  { id: "ipapi_co", label: "ipapi.co" },
-  { id: "ipinfoio", label: "ipinfo.io" },
-];
+import Image from 'next/image';
 
 export interface IPCardResult {
   provider: string;
@@ -33,7 +25,7 @@ export interface IPCardResult {
 }
 
 export const IPInfo: React.FC<{ ip: string }> = ({ ip }) => {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<IPCardResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [showTop, setShowTop] = useState(false);
 
@@ -83,7 +75,7 @@ export const IPInfo: React.FC<{ ip: string }> = ({ ip }) => {
                   <tr><td>Org</td><td>{result.organization}</td></tr>
                   <tr><td>Timezone</td><td>{result.timezone}</td></tr>
                   <tr><td>Local Time</td><td>{result.local_time}</td></tr>
-                  <tr><td>Flag</td><td>{result.flag && <img src={result.flag} alt="flag" className="h-5" />}</td></tr>
+                  <tr><td>Flag</td><td>{result.flag && <Image src={result.flag} alt="flag" width={30} height={20} unoptimized className="h-5 w-auto" />}</td></tr>
                   <tr><td>Latitude/Longitude</td><td>{result.latitude}, {result.longitude}</td></tr>
                 </tbody>
               </table>

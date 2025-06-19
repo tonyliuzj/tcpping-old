@@ -2,21 +2,59 @@
 
 const IPDATA_KEY = process.env.IPDATA_KEY || "YOUR_KEY";
 
+interface IPDataResponse {
+  error?: boolean;
+  message?: string;
+  reason?: string;
+  ip?: string;
+  city?: string;
+  region?: string;
+  country_name?: string;
+  country_code?: string;
+  continent_name?: string;
+  continent_code?: string;
+  latitude?: number;
+  longitude?: number;
+  asn?: {
+    asn?: string;
+    name?: string;
+    domain?: string;
+  };
+  carrier?: {
+    name?: string;
+  };
+  time_zone?: {
+    name?: string;
+    current_time?: string;
+  };
+  flag?: string;
+}
+
 export async function fetchIPData(ip: string) {
   try {
     const r = await fetch(`https://api.ipdata.co/${ip}?api-key=${IPDATA_KEY}`);
     const text = await r.text();
-    let data: any = null;
+    let data: IPDataResponse | null = null;
 
     try {
       data = JSON.parse(text);
-    } catch (e) {
+    } catch {
       // Not valid JSON (likely an error page)
       return {
         provider: "ipdata.co",
         ok: false,
         ip,
         error: "Non-JSON response from ipdata.co",
+        raw: text,
+      };
+    }
+
+    if (!data) {
+      return {
+        provider: "ipdata.co",
+        ok: false,
+        ip,
+        error: "Unexpected null data after JSON parse",
         raw: text,
       };
     }
@@ -53,12 +91,12 @@ export async function fetchIPData(ip: string) {
       flag: data.flag,
       error: null,
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       provider: "ipdata.co",
       ok: false,
       ip,
-      error: e.message || "Network or fetch error",
+      error: e instanceof Error ? e.message : "Network or fetch error",
     };
   }
 }
