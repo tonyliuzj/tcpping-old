@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   ComposableMap,
   Geographies,
@@ -15,6 +15,7 @@ export interface WorldMapProps {
   ipLocations?: { ip: string; label?: string; lat: number; lon: number }[];
   center?: [number, number]; // [lat, lon]
   zoom?: number; // Leaflet scale usually
+  activeCountry?: string;
 }
 
 // Convert Leaflet Zoom to react-simple-maps zoom
@@ -35,10 +36,10 @@ const SvgWorldMap: React.FC<WorldMapProps> = ({
   ipLocations = [],
   center = [20, 0],
   zoom = 2,
+  activeCountry,
 }) => {
   const [tooltipContent, setTooltipContent] = useState("");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
   // Combine markers
   const markers = useMemo(() => {
     const list: Array<{ lat: number; lon: number; name: string; type: 'city' | 'ip' }> = [];
@@ -81,29 +82,34 @@ const SvgWorldMap: React.FC<WorldMapProps> = ({
           <Geographies geography={geoUrl}>
             {({ geographies }: { geographies: any[] }) =>
               geographies.map((geo: any) => {
-                const isChina = geo.properties.name === "China";
+                const countryName = geo.properties.name;
+                const isChina =
+                  countryName === "China" || countryName === "Taiwan";
+                const displayName = countryName === "Taiwan" ? "China" : countryName;
+                
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
-                    onMouseEnter={(e: any) => handleMouseEnter(geo.properties.name, e)}
+                    onMouseEnter={(e: any) => handleMouseEnter(displayName, e)}
                     onMouseLeave={handleMouseLeave}
                     style={{
                       default: {
-                        fill: isChina ? "#2c3e50" : "#242424",
-                        stroke: "#333",
-                        strokeWidth: 0.5,
+                        fill: isChina ? "#32465a" : "#2b3543",
+                        stroke: "#1f2a37",
+                        strokeWidth: 0.6,
                         outline: "none",
                       },
                       hover: {
-                        fill: "#34495e",
-                        stroke: "#666",
-                        strokeWidth: 0.75,
+                        fill: "#3c5369",
+                        stroke: "#4b5563",
+                        strokeWidth: 0.8,
                         outline: "none",
                         cursor: "pointer",
                       },
                       pressed: {
-                        fill: "#2c3e50",
+                        fill: "#32465a",
+                        stroke: "#1f2a37",
                         outline: "none",
                       },
                     }}

@@ -165,6 +165,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
         ipLocations={ipLocations}
         center={mapCenter}
         zoom={mapZoom}
+        activeCountry={selectedCountry}
       />
     </div>
   );
